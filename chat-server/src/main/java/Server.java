@@ -38,9 +38,16 @@ public class Server {
         }
     }
 
+    public synchronized void sendMessageToUser(String user, String message) {
+        for (ClientHandler client : clients) {
+            if (client.getUsername().equals(user)){
+                System.out.println("message to: "+client.getUsername());
+                client.sendMessage(message);
+            }
+        }
+    }
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
         broadcastMessage("Client "+ clientHandler.getUsername() + " has disconnected");
-
     }
 }

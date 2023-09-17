@@ -34,6 +34,13 @@ public class ClientHandler {
                         if (message.equals("/exit")) {
                             break;
                         }
+                        if (message.startsWith("/w")){
+                            String user = message.replaceAll("^/w\\s+(\\w+)\\s+.+","$1");
+                            message =  message.replaceAll("^/w\\s+(\\w+)\\s+(.+)","$2");
+                            System.out.println("user = "+user+ " message = "+message);
+                            server.sendMessageToUser(user, message);
+                            continue;
+                        }
                     }
                     server.broadcastMessage(message);
                 }
@@ -53,6 +60,7 @@ public class ClientHandler {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
         }
         if (in != null) {
             try {
