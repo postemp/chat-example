@@ -30,7 +30,6 @@ public class Network implements AutoCloseable {
             } catch (IOException e) {
                 callback.call("Disconnect");
                 close();
-//                throw new RuntimeException(e);
             } finally {
                 try {
                     close();
