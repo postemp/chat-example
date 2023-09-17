@@ -28,9 +28,15 @@ public class Network implements AutoCloseable {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                callback.call("Disconnect");
+                close();
+//                throw new RuntimeException(e);
             } finally {
+                try {
                     close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         }).start();
     }
@@ -59,6 +65,7 @@ public class Network implements AutoCloseable {
                 throw new RuntimeException(e);
             }
         }
+
         System.exit(0);
     }
 
