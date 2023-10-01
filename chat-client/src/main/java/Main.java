@@ -12,7 +12,7 @@ public class Main {
                         }
                     }
             );
-            network.connect(8080);
+             network.connect(8080);
             Scanner scanner = new Scanner(System.in);
             while (true){
                 String msg = scanner.nextLine();
