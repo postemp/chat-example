@@ -3,14 +3,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Server {
     private int port;
     private List<ClientHandler> clients;
 
-    public Server(int port) {
+    private final AuthenticationProvider authenticationProvider;
+
+    public AuthenticationProvider getAuthenticationProvider() {
+        return authenticationProvider;
+    }
+
+    public Server(int port, AuthenticationProvider authenticationProvider) {
         this.port = port;
         clients = new ArrayList<>();
+        this.authenticationProvider = authenticationProvider;
     }
 
     public void start() {
@@ -26,21 +34,52 @@ public class Server {
         }
     }
 
-    public synchronized void subscribe(ClientHandler clientHandler){
+    public synchronized void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
-        broadcastMessage("Client "+ clientHandler.getUsername() + " has connected to chat");
+        broadcastMessage("Client " + clientHandler.getUsername() + " has connected to chat");
 
     }
+
     public synchronized void broadcastMessage(String message) {
         for (ClientHandler client : clients) {
-            System.out.println("message to: "+client.getUsername());
+            System.out.println("message to: " + client.getUsername());
             client.sendMessage(message);
+        }
+    }
+
+    public synchronized void sendMessageToUser(String user, String message) {
+        for (ClientHandler client : clients) {
+            if (client.getUsername().equals(user)) {
+                System.out.println("message to: " + client.getUsername());
+                client.sendMessage(message);
+            }
         }
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
-        broadcastMessage("Client "+ clientHandler.getUsername() + " has disconnected");
-
+        broadcastMessage("Client " + clientHandler.getUsername() + " has disconnected");
     }
+
+    public synchronized List<String> getUserList() {
+        return clients.stream()
+                .map(ClientHandler::getUsername)
+                .collect(Collectors.toList());
+    }
+
+    public synchronized boolean kickUser(String user, String whoDoes) {
+        System.out.println("Отключает пользователь: "+ whoDoes);
+        for (ClientHandler client : clients) {
+            System.out.println("User:" + client.getUsername());
+            if (client.getUsername().equals(user)){
+                System.out.println("kick user: "+client.getUsername());
+                client.sendMessage("Вас отключают");
+                client.disconnect();
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
