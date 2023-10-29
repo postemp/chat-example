@@ -1,4 +1,4 @@
-public class Main {
+public class SrvMain {
     public static void main(String[] args) {
         int port = 8080;
         if (args.length > 0) {
