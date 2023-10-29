@@ -1,10 +1,12 @@
 import java.io.IOException;
 import java.util.Scanner;
 
-public class Main {
+public class CltMain {
     public static void main(String[] args) {
         try (Network network = new Network()) {
+
             network.setCallback(
+//                    args1 -> System.out.println(args1[0]) // it is better to use this expression
                     new Callback() {
                         @Override
                         public void call(Object... args) {

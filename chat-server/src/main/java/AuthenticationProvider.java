@@ -5,4 +5,8 @@ public interface AuthenticationProvider {
 
     String getRoleByUsername(String username);
 
+    String getActiveClientsList();
+
+    String getAllClientsList();
+
 }

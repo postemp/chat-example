@@ -64,7 +64,6 @@ public class Network implements AutoCloseable {
                 throw new RuntimeException(e);
             }
         }
-
         System.exit(0);
     }
 

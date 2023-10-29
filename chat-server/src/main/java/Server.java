@@ -24,7 +24,7 @@ public class Server {
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
-                System.out.println("server has started on port" + port);
+                System.out.println("server has started on port: " + port);
                 Socket socket = serverSocket.accept();
                 new ClientHandler(socket, this);
             }
@@ -62,17 +62,27 @@ public class Server {
     }
 
     public synchronized List<String> getUserList() {
-        return clients.stream()
-                .map(ClientHandler::getUsername)
-                .collect(Collectors.toList());
+//                вот так правильнее, но непонятно, поэтому пока переписал под свой уровень что бы разобраться.
+//                return clients.stream()
+//                .map(ClientHandler::getUsername)
+//                .collect(Collectors.toList());
+
+        List<String> userList = new ArrayList<>();
+        for (ClientHandler clientHandler : clients) {
+            System.out.println("clientHandler.getUsername()=" + clientHandler.getUsername());
+            userList.add(clientHandler.getUsername());
+        }
+        return userList;
+
+
     }
 
     public synchronized boolean kickUser(String user, String whoDoes) {
-        System.out.println("Отключает пользователь: "+ whoDoes);
+        System.out.println("Отключает пользователь: " + whoDoes);
         for (ClientHandler client : clients) {
             System.out.println("User:" + client.getUsername());
-            if (client.getUsername().equals(user)){
-                System.out.println("kick user: "+client.getUsername());
+            if (client.getUsername().equals(user)) {
+                System.out.println("kick user: " + client.getUsername());
                 client.sendMessage("Вас отключают");
                 client.disconnect();
                 return true;
@@ -80,6 +90,4 @@ public class Server {
         }
         return false;
     }
-
-
 }

@@ -2,6 +2,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class ClientHandler {
@@ -26,9 +28,10 @@ public class ClientHandler {
 //        server.subscribe(this);
         new Thread(() -> {
             try {
+                sendMessage("Введите логин пароль командой /auth login password");
+                sendMessage("или зарегистрируйтесь командой /register login name password");
                 authenticateUser(server);
                 communicateWithUser(server);
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -105,7 +108,7 @@ public class ClientHandler {
                         this.disconnect();
                         break;
                     }
-                    case "/list": {
+                    case ("/activelist"): {
                         System.out.println("list");
                         List<String> userList = server.getUserList();
                         String joinedUsers =
@@ -147,13 +150,17 @@ public class ClientHandler {
                         sendMessage("Моя роль:" + whatRole);
                         continue;
                     }
+                    case "/allclients" : {
+                        sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
+                        continue;
+                    }
                     default: {
                         System.out.println("default");
                         sendMessage("Неопознанная команда");
                     }
                 }
             } else {
-                server.broadcastMessage("Server: " + message);
+                server.broadcastMessage("Broadcast message: " + message);
             }
         }
     }
@@ -187,7 +194,9 @@ public class ClientHandler {
     public void sendMessage(String message) {
         try {
 //            System.out.println("We try to send message:"+ message);
-            out.writeUTF(message);
+            Date currentDate = new Date();
+            SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
+            out.writeUTF(timeFormatter.format(currentDate)+" "+message);
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
