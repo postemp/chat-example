@@ -20,6 +20,15 @@ public class ClientHandler {
         return username;
     }
 
+    public Boolean ifIAmAdmin() {
+        String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
+        if (!myRole.equals("ADMIN")) {
+            return false;
+        }
+        return true;
+    }
+
+
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
         this.server = server;
@@ -44,6 +53,7 @@ public class ClientHandler {
         boolean isAuthenticated = false;
         while (!isAuthenticated) {
             String message = in.readUTF();
+            message = message.trim().replaceAll(" +", " "); // удаляем лишние случайные пробелы
 //            /auth login password
 //            /register login nick role password
             String[] args = message.split(" ");
@@ -65,20 +75,20 @@ public class ClientHandler {
                 }
                 case "/register": {
                     String login = args[1];
-                    String nick = args[2];
-                    String role = args[3];
-                    if (!(role.equals("ADMIN") || role.equals("USER"))) {
-                        System.out.println("Роль может быть ADMIN или USER");
-                        sendMessage("Роль может быть ADMIN или USER");
-                        continue;
-                    }
-                    String password = args[4];
-                    boolean isRegistred = server.getAuthenticationProvider().register(login, password, role, nick);
+                    String username = args[2];
+//                    String role = args[3];
+//                    if (!(role.equals("ADMIN") || role.equals("USER"))) {
+//                        System.out.println("Роль может быть ADMIN или USER");
+//                        sendMessage("Роль может быть ADMIN или USER");
+//                        continue;
+//                    }
+                    String password = args[3];
+                    boolean isRegistred = server.getAuthenticationProvider().register(login, password, username);
                     if (!isRegistred) {
                         sendMessage("Указанный логин/никнейм уже заняты");
                     } else {
-                        this.username = nick;
-                        sendMessage(nick + ", добро пожаловать в чат!");
+                        this.username = username;
+                        sendMessage(username + ", добро пожаловать в чат!");
                         server.subscribe(this);
                         isAuthenticated = true;
                     }
@@ -92,6 +102,7 @@ public class ClientHandler {
         }
 
     }
+
     private void communicateWithUser(Server server) throws IOException {
         while (true) {
             // /exit -> disconnect()
@@ -101,7 +112,7 @@ public class ClientHandler {
             if (message.startsWith("/")) {
                 String[] args = message.split(" ");
                 String command = args[0];
-                System.out.println("command = "+command);
+                System.out.println("command = " + command);
                 switch (command) {
                     case "/exit": {
                         System.out.println("exit");
@@ -119,15 +130,15 @@ public class ClientHandler {
                     }
                     case "/w": {
                         System.out.println("w");
-                        String user = message.replaceAll("^/w\\s+(\\w+)\\s+.+","$1");
-                        message =  message.replaceAll("^/w\\s+(\\w+)\\s+(.+)","$2");
-                        System.out.println("user = "+user+ " message = "+message);
+                        String user = message.replaceAll("^/w\\s+(\\w+)\\s+.+", "$1");
+                        message = message.replaceAll("^/w\\s+(\\w+)\\s+(.+)", "$2");
+                        System.out.println("user = " + user + " message = " + message);
                         server.sendMessageToUser(user, message);
                         continue;
                     }
                     case "/kick": {
                         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-                        if (  ! myRole.equals("ADMIN") ) {
+                        if (!myRole.equals("ADMIN")) {
                             sendMessage("У вас нет прав на удаление пользователей, ваша роль - " + myRole);
                             continue;
                         }
@@ -145,13 +156,35 @@ public class ClientHandler {
                         }
                         continue;
                     }
-                    case "/role" : {
+                    case "/role": {
                         String whatRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
                         sendMessage("Моя роль:" + whatRole);
                         continue;
                     }
-                    case "/allclients" : {
-                        sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
+                    case "/allclients": {
+                        if (ifIAmAdmin()) {
+                            sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
+                        } else {
+                            sendMessage("Вы не админ, нет у вас таких прав");
+                        }
+                        continue;
+                    }
+                    case "/changenick": { // смена своего ника
+                        String newNick;
+                        try {
+                            newNick = args[1];
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            sendMessage("Не указан новый ник");
+                            continue;
+                        }
+
+                        boolean isWrittenToDB = server.getAuthenticationProvider().changeNick(this);
+                        if (isWrittenToDB) {
+                            this.username = newNick;
+                            sendMessage("Ваш ник сменен на " + this.username);
+                        } else {
+                            sendMessage("Не удалось сменить ваш ник, при записи в БД возникли проблемы");
+                        }
                         continue;
                     }
                     default: {
@@ -196,7 +229,7 @@ public class ClientHandler {
 //            System.out.println("We try to send message:"+ message);
             Date currentDate = new Date();
             SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
-            out.writeUTF(timeFormatter.format(currentDate)+" "+message);
+            out.writeUTF(timeFormatter.format(currentDate) + " " + message);
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();

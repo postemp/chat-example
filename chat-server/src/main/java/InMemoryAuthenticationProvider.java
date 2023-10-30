@@ -45,29 +45,44 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
 
 
     @Override
-    public synchronized boolean register(String login, String password, String role, String username) {
+    public synchronized boolean register(String login, String password, String username) {
         for (User user : users) {
             if (Objects.equals(user.getUsername(), username) && Objects.equals(user.getLogin(), login)) {
                 return false;
             }
         }
-        // добавляем запись нового юзера в БД
 
-        // доделать!!! нужно дописывать в базу insert into public.user_to_roles (user_id, role_id) values (4,2);
+        // добавляем запись нового юзера в БД по умолчанию с правами USER
         try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
+            connection.setAutoCommit(false);
             Statement statement = connection.createStatement();
-            PreparedStatement ps = connection.prepareStatement("insert into public.users ( login, username, password ) values (?,?,?);");
+            int userId;
+            PreparedStatement ps = connection.prepareStatement("insert into public.users ( login, username, password ) values (?,?,?);", Statement.RETURN_GENERATED_KEYS);
             ps.setString(1,login);
             ps.setString(2,username);
             ps.setString(3,password);
             ps.executeUpdate();
-
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    userId = generatedKeys.getInt(1);
+                    System.out.println("UserId is- " + userId);
+                }
+                else {
+                    connection.rollback();
+                    throw new SQLException("User insertion has problem. No ID returned.");
+                }
+            }
+            ps.close();
+            ps = connection.prepareStatement("insert into public.user_to_roles (user_id, role_id) values (?,2);");
+            ps.setInt(1,userId);
+            ps.executeUpdate();
+            connection.commit();
         } catch (SQLException e) {
             System.out.println("Connection to database failed");
             System.out.println(e);
         }
-        // добавляем запись нового юзера в массив пользователей
-        users.add(new User(login, password, role, username));
+        // добавляем запись нового юзера в массив пользователей по умолчанию с правами USER
+        users.add(new User(login, password, "USER", username));
         return true;
     }
 
@@ -94,5 +109,12 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
             activeClientList += user.getUsername() + "; ";
         }
         return activeClientList;
+    }
+
+    @Override
+    public boolean changeNick(ClientHandler clientHandler){
+        System.out.println("clientHandler.getUsername()"+clientHandler.getUsername());
+        // tie to the current nickname clientHandler.getUsername()) and change nik in the DB
+        return false;
     }
 }

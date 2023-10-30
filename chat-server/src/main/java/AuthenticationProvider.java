@@ -1,7 +1,7 @@
 public interface AuthenticationProvider {
     String getUsernameByLoginAndPassword(String login, String password);
 
-    boolean register(String login, String password, String username, String nick);
+    boolean register(String login, String password, String username);
 
     String getRoleByUsername(String username);
 
@@ -9,4 +9,5 @@ public interface AuthenticationProvider {
 
     String getAllClientsList();
 
+    boolean changeNick(ClientHandler clientHandler);
 }
