@@ -178,7 +178,7 @@ public class ClientHandler {
                             continue;
                         }
 
-                        boolean isWrittenToDB = server.getAuthenticationProvider().changeNick(this);
+                        boolean isWrittenToDB = server.getAuthenticationProvider().changeNickDB(this.username, newNick);
                         if (isWrittenToDB) {
                             this.username = newNick;
                             sendMessage("Ваш ник сменен на " + this.username);

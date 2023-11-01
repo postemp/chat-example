@@ -9,5 +9,5 @@ public interface AuthenticationProvider {
 
     String getAllClientsList();
 
-    boolean changeNick(ClientHandler clientHandler);
+    boolean changeNickDB(String oldNick, String newNick);
 }
