@@ -8,7 +8,7 @@ create table public.users (
 	login varchar(255),
 	username varchar(255),
 	password varchar(255),
-	is_banned varchar(1) default 'N',
+	is_banned integer default null, -- null разблокирован, 0 - заблокирован навечно, любая цифра - количество минут
 	constraint users_pk primary key (id)
 )
 

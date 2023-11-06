@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,7 +14,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     private final List<User> users;
 
     public InMemoryAuthenticationProvider() {
-        this.users = new ArrayList<> ();
+        this.users = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
             try (PreparedStatement ps = connection.prepareStatement(SELECT_ALL_USERS_WITH_ROLE)) {
                 try (ResultSet rs = ps.executeQuery()) {
@@ -35,7 +36,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public String getUsernameByLoginAndPassword(String login, String password) {
-        for (User user: users) {
+        for (User user : users) {
             if (Objects.equals(user.getPassword(), password) && Objects.equals(user.getLogin(), login)) {
                 return user.getUsername();
             }
@@ -58,23 +59,22 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
             Statement statement = connection.createStatement();
             int userId;
             PreparedStatement ps = connection.prepareStatement("insert into public.users ( login, username, password ) values (?,?,?);", Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1,login);
-            ps.setString(2,username);
-            ps.setString(3,password);
+            ps.setString(1, login);
+            ps.setString(2, username);
+            ps.setString(3, password);
             ps.executeUpdate();
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     userId = generatedKeys.getInt(1);
                     System.out.println("UserId is- " + userId);
-                }
-                else {
+                } else {
                     connection.rollback();
                     throw new SQLException("User insertion has problem. No ID returned.");
                 }
             }
             ps.close();
             ps = connection.prepareStatement("insert into public.user_to_roles (user_id, role_id) values (?,2);");
-            ps.setInt(1,userId);
+            ps.setInt(1, userId);
             ps.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
@@ -87,7 +87,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public String getRoleByUsername(String username){
+    public String getRoleByUsername(String username) {
         for (User user : users) {
             if (Objects.equals(user.getUsername(), username)) {
                 return user.getRole();
@@ -96,12 +96,6 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
         return null;
     }
 
-    @Override
-    public String getActiveClientsList() {
-        String activeClientList = "";
-        // придумать как получить список активных клиентов
-        return activeClientList;
-    }
     @Override
     public String getAllClientsList() {
         String activeClientList = "";
@@ -112,34 +106,34 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public boolean changeNickDB(String oldNick, String newNick){
-        System.out.println("Old nick"+oldNick);
+    public boolean changeNickDB(String oldNick, String newNick) {
+        System.out.println("Old nick" + oldNick);
         boolean result = false;
         for (User user : users) {
-            if (Objects.equals(user.getUsername(), oldNick) ) {
-                System.out.println("Мы нашли ник пользователя "+ oldNick + " с логином: " + user.getLogin() + " в памяти,  меняем на новый ник" + newNick);
+            if (Objects.equals(user.getUsername(), oldNick)) {
+                System.out.println("Мы нашли ник пользователя " + oldNick + " с логином: " + user.getLogin() + " в памяти,  меняем на новый ник" + newNick);
                 user.setUsername(newNick);
                 try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
                     connection.setAutoCommit(false);
                     Statement statement = connection.createStatement();
                     PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
-                    ps.setString(1,oldNick);
+                    ps.setString(1, oldNick);
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
                             Long userId = rs.getLong("id");
                             String login = rs.getString("login");
-                            if (login.equals(user.getLogin())){
+                            if (login.equals(user.getLogin())) {
                                 System.out.println("Юзер найден в БД, меняем его ник");
                                 ps.close();
                                 ps = connection.prepareStatement("update public.users  set username = ? where id = ?;");
-                                ps.setString(1,newNick);
-                                ps.setLong(2,userId);
+                                ps.setString(1, newNick);
+                                ps.setLong(2, userId);
                                 ps.executeUpdate();
                                 connection.commit();
                                 result = true;
                                 break;
                             }
-                       }
+                        }
                     } catch (SQLException e) {
                     }
                 } catch (SQLException e) {
@@ -153,11 +147,26 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public boolean banUser(String bannedUser){
+    public boolean banUser(String bannedUser, int bannedPeriod) {
         boolean result = false;
-//        for (User user : users) {
-//            if (Objects.equals(user.getUsername(), bannedUser) ) {
-//                System.out.println("Мы нашли ник пользователя "+ bannedUser + " с логином: " + user.getLogin() + " в памяти, блокируем его" );
+        Date currentDate = new Date();
+        long curTimeInMs = currentDate.getTime();
+        Date blockedUntilDate;
+        if (bannedPeriod == 0) {
+            blockedUntilDate = new Date(1212121212121121212L);
+
+        } else {
+            blockedUntilDate = new Date(curTimeInMs + (bannedPeriod * 60000));
+        }
+
+        System.out.println("Устанавливаем дату блокировки до: " + blockedUntilDate);
+
+        for (User user : users) {
+            if (Objects.equals(user.getUsername(), bannedUser)) {
+                System.out.println("Мы нашли ник пользователя " + bannedUser + " с логином: " + user.getLogin() + " в памяти, устанавливаем время блокировки");
+                user.setBannedTill(blockedUntilDate);
+            }
+        }
 //                user.setUsername();
 //                try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
 //                    connection.setAutoCommit(false);

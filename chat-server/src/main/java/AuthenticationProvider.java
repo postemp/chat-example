@@ -5,11 +5,9 @@ public interface AuthenticationProvider {
 
     String getRoleByUsername(String username);
 
-    String getActiveClientsList();
-
     String getAllClientsList();
 
     boolean changeNickDB(String oldNick, String newNick);
 
-    boolean banUser(String bannedUser);
+    boolean banUser(String bannedUser, int bannedPeriod);
 }

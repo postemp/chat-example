@@ -12,19 +12,20 @@ public class ClientHandler {
     private DataOutputStream out;
     private String username;
     private Server server;
+    private static int userCount = 0;
+    Date loginDate;
 
     public Date getLoginDate() {
         return loginDate;
     }
 
-    private static int userCount = 0;
-
-    Date loginDate;
+    public void setLoginDate(Date loginDate) {
+        this.loginDate = loginDate;
+    }
 
     public String getUsername() {
         return username;
     }
-
 
     public Boolean AmIAdmin() {
         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
@@ -152,7 +153,7 @@ public class ClientHandler {
                     }
                     case "/whoami": {
                         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-                        sendMessage("Вы " + username + " ваша роль:" + myRole);
+                        sendMessage("Вы " + username + " ваша роль:" + myRole + " дата блокировки до:" );
                         continue;
                     }
                     case "/kick": {
@@ -175,6 +176,7 @@ public class ClientHandler {
                         continue;
                     }
                     case "/ban": {
+                        // /ban username если нет второго аргумента, то навечно, либо цифра - время блокировки в минутах
                         if (!AmIAdmin()) {
                             sendMessage("Вы не админ, нет у вас таких прав");
                             continue;
@@ -186,7 +188,26 @@ public class ClientHandler {
                             sendMessage("Не указан пользователь для блокировки");
                             continue;
                         }
-                        sendMessage("Пользователь "+ bannedUser + " заблокирован в БД, результат: "+  server.getAuthenticationProvider().banUser(bannedUser));
+                        int bannedPeriod;
+                        try {
+                            bannedPeriod = Integer.parseInt(args[2]);
+                        } catch (Exception e) {
+                            sendMessage("Не указан период блокировки, 0 - до скончания веков");
+                            continue;
+                        }
+                        sendMessage("Пользователь "+ bannedUser + " заблокирован в БД, результат: "+  server.getAuthenticationProvider().banUser(bannedUser,bannedPeriod));
+                        if (server.kickUser(bannedUser, this.username)) {
+                            sendMessage("Отключили пользователя:" + bannedUser);
+                        } else {
+                            sendMessage("Не нашли пользователя:" + bannedUser);
+                        }
+                        continue;
+                    }
+                    case "/unban": {
+                        if (!AmIAdmin()) {
+                            sendMessage("Вы не админ, нет у вас таких прав");
+                            continue;
+                        }
                         continue;
                     }
                     case "/role": {
@@ -210,7 +231,6 @@ public class ClientHandler {
                             sendMessage("Не указан новый ник");
                             continue;
                         }
-
                         boolean isWrittenToDB = server.getAuthenticationProvider().changeNickDB(this.username, newNick);
                         if (isWrittenToDB) {
                             this.username = newNick;

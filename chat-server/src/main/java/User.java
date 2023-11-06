@@ -1,17 +1,17 @@
+import java.util.Date;
+
 public class User {
     private String login;
     private String password;
     private String username;
     private String role; // USER, ADMIN
-    private Integer isBanned;
 
-    public Integer getIsBanned() {
-        return isBanned;
+    private Date bannedTill;
+    public Date getBannedTill() {
+        return bannedTill;
     }
-
-
-    public void setIsBanned(Integer isBanned) {
-        this.isBanned = isBanned;
+    public void setBannedTill(Date bannedTill) {
+        this.bannedTill = bannedTill;
     }
 
     public void setUsername(String username) {
