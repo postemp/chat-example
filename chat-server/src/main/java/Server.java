@@ -1,8 +1,7 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Server {
@@ -23,12 +22,58 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+            new Thread(() -> {
+                try {
+//                    ClientHandler clientHandler; // для варианта с итератором
+                    while (true) {
+                        Date currentDate = new Date();
+                        System.out.println("begin----------------------------"+currentDate);
+                        long diffInMillies = 0;
+//                        // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
+                        for (ClientHandler clientHandler : clients) {
+                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
+                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
+                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 1) {
+                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
+                                clientHandler.disconnect();
+                                clients.remove(clientHandler);
+                                break;
+                            }
+                        }
+//                    вариант с итератором, по моему, избыточен
+//                    ListIterator<ClientHandler> clientHandlerIterator = clients.listIterator();
+//                        while (clientHandlerIterator.hasNext()) {
+//                            System.out.println("clientHandlerIterator.hasNext 46 string ");
+//                            clientHandler =clientHandlerIterator.next();
+//                            System.out.println("clientHandlerIterator.hasNext 48 string ");
+//                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 5000; // don't forget to change  to 60000
+//                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
+////                            if (diffInMillies >= 20) {
+//                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 1) {
+//                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
+//                                clientHandler.disconnect();
+//                                clientHandlerIterator.remove();
+////                                clients.remove(clientHandler);
+////                                break;
+//                            }
+//                        }
+//                        System.out.println("end----------------------------");
+                        Thread.sleep(60000); // 60000
+                    }
+                } catch (Exception e)  {
+                    System.out.println("Exception:" + e);
+                    throw new RuntimeException(e);
+
+                } finally {
+                }
+            }).start();
             while (true) {
-                System.out.println("server has started on port: " + port);
+                System.out.println("a new client connected on port: " + port);
                 Socket socket = serverSocket.accept();
                 new ClientHandler(socket, this);
             }
-        } catch (IOException e) {
+        } catch (
+                IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -73,8 +118,6 @@ public class Server {
             userList.add(clientHandler.getUsername());
         }
         return userList;
-
-
     }
 
     public synchronized boolean kickUser(String user, String whoDoes) {

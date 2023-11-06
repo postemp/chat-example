@@ -3,6 +3,20 @@ public class User {
     private String password;
     private String username;
     private String role; // USER, ADMIN
+    private Integer isBanned;
+
+    public Integer getIsBanned() {
+        return isBanned;
+    }
+
+
+    public void setIsBanned(Integer isBanned) {
+        this.isBanned = isBanned;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public String getLogin() {
         return login;

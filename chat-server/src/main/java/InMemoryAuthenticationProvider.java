@@ -117,7 +117,8 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
         boolean result = false;
         for (User user : users) {
             if (Objects.equals(user.getUsername(), oldNick) ) {
-                System.out.println("Мы нашли ник пользователя "+ oldNick + " с логином: " + user.getLogin() + " в памяти,  меняем в БД на новый ник" + newNick);
+                System.out.println("Мы нашли ник пользователя "+ oldNick + " с логином: " + user.getLogin() + " в памяти,  меняем на новый ник" + newNick);
+                user.setUsername(newNick);
                 try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
                     connection.setAutoCommit(false);
                     Statement statement = connection.createStatement();
@@ -148,6 +149,46 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
                 return result;
             }
         }
+        return false;
+    }
+
+    @Override
+    public boolean banUser(String bannedUser){
+        boolean result = false;
+//        for (User user : users) {
+//            if (Objects.equals(user.getUsername(), bannedUser) ) {
+//                System.out.println("Мы нашли ник пользователя "+ bannedUser + " с логином: " + user.getLogin() + " в памяти, блокируем его" );
+//                user.setUsername();
+//                try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
+//                    connection.setAutoCommit(false);
+//                    Statement statement = connection.createStatement();
+//                    PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
+//                    ps.setString(1,oldNick);
+//                    try (ResultSet rs = ps.executeQuery()) {
+//                        while (rs.next()) {
+//                            Long userId = rs.getLong("id");
+//                            String login = rs.getString("login");
+//                            if (login.equals(user.getLogin())){
+//                                System.out.println("Юзер найден в БД, меняем его ник");
+//                                ps.close();
+//                                ps = connection.prepareStatement("update public.users  set username = ? where id = ?;");
+//                                ps.setString(1,newNick);
+//                                ps.setLong(2,userId);
+//                                ps.executeUpdate();
+//                                connection.commit();
+//                                result = true;
+//                                break;
+//                            }
+//                        }
+//                    } catch (SQLException e) {
+//                    }
+//                } catch (SQLException e) {
+//                    System.out.println("Connection to database failed");
+//                    System.out.println(e);
+//                }
+//                return result;
+//            }
+//        }
         return false;
     }
 }

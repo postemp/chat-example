@@ -1,5 +1,6 @@
 
 
+
 --login nick role password
 
 create table public.users (
@@ -7,6 +8,7 @@ create table public.users (
 	login varchar(255),
 	username varchar(255),
 	password varchar(255),
+	is_banned varchar(1) default 'N',
 	constraint users_pk primary key (id)
 )
 
@@ -38,6 +40,10 @@ insert into public.users ( login, username, password) values ('forth', 'Misha', 
 
 select * from users
 
+select id from public.users where username = 'Masha'
+
+delete from users where id = 15
+
 insert into public.roles ( roles_name) values ('ADMIN');
 insert into public.roles ( roles_name) values ('USER');
 
@@ -50,6 +56,12 @@ insert into public.user_to_roles (user_id, role_id) values (4,2);
 
 select * from user_to_roles ur
 
+delete from user_to_roles where user_id = 15
+
 select u.username, r.roles_name from users u, roles r, user_to_roles ur where ur.user_id = u.id and ur.role_id = r.id and r.roles_name = 'ADMIN'
 
 select u.id as id, u.login as login, u.username as username, r.roles_name, u.password  from users u, roles r, user_to_roles ur where ur.user_id = u.id and ur.role_id = r.id
+
+update public.users  set username = 'Pasha' where id = 3
+
+update public.users  set is_banned = 'N' where id = 3

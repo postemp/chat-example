@@ -11,16 +11,22 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
     private String username;
-
     private Server server;
 
+    public Date getLoginDate() {
+        return loginDate;
+    }
+
     private static int userCount = 0;
+
+    Date loginDate;
 
     public String getUsername() {
         return username;
     }
 
-    public Boolean ifIAmAdmin() {
+
+    public Boolean AmIAdmin() {
         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
         if (!myRole.equals("ADMIN")) {
             return false;
@@ -28,12 +34,12 @@ public class ClientHandler {
         return true;
     }
 
-
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
         this.server = server;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
+        loginDate = new Date();
 //        server.subscribe(this);
         new Thread(() -> {
             try {
@@ -42,9 +48,12 @@ public class ClientHandler {
                 authenticateUser(server);
                 communicateWithUser(server);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                System.out.println("IOException string 50 ");
+                e.printStackTrace();
+//                throw new RuntimeException(e);
             } finally {
-                disconnect();
+                System.out.println("ClientHandler Thread disconnect");
+//                disconnect();
             }
         }).start();
     }
@@ -107,8 +116,13 @@ public class ClientHandler {
         while (true) {
             // /exit -> disconnect()
             // /w user message -> user
-
-            String message = in.readUTF();
+            String message = null;
+            try {
+                message = in.readUTF();
+            } catch (Exception e) {
+                System.out.println("Скорее всего пользователя отключили, поэтому exception");
+                e.printStackTrace();
+            }
             if (message.startsWith("/")) {
                 String[] args = message.split(" ");
                 String command = args[0];
@@ -136,10 +150,14 @@ public class ClientHandler {
                         server.sendMessageToUser(user, message);
                         continue;
                     }
-                    case "/kick": {
+                    case "/whoami": {
                         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-                        if (!myRole.equals("ADMIN")) {
-                            sendMessage("У вас нет прав на удаление пользователей, ваша роль - " + myRole);
+                        sendMessage("Вы " + username + " ваша роль:" + myRole);
+                        continue;
+                    }
+                    case "/kick": {
+                        if (!AmIAdmin()) {
+                            sendMessage("У вас нет прав на отключение из чата пользователей");
                             continue;
                         }
                         String kickedUser;
@@ -150,10 +168,25 @@ public class ClientHandler {
                             continue;
                         }
                         if (server.kickUser(kickedUser, this.username)) {
-                            sendMessage("Удалили пользователя:" + kickedUser);
+                            sendMessage("Отключили пользователя:" + kickedUser);
                         } else {
                             sendMessage("Не нашли пользователя:" + kickedUser);
                         }
+                        continue;
+                    }
+                    case "/ban": {
+                        if (!AmIAdmin()) {
+                            sendMessage("Вы не админ, нет у вас таких прав");
+                            continue;
+                        }
+                        String bannedUser;
+                        try {
+                            bannedUser = args[1];
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            sendMessage("Не указан пользователь для блокировки");
+                            continue;
+                        }
+                        sendMessage("Пользователь "+ bannedUser + " заблокирован в БД, результат: "+  server.getAuthenticationProvider().banUser(bannedUser));
                         continue;
                     }
                     case "/role": {
@@ -162,11 +195,11 @@ public class ClientHandler {
                         continue;
                     }
                     case "/allclients": {
-                        if (ifIAmAdmin()) {
-                            sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
-                        } else {
+                        if (!AmIAdmin()) {
                             sendMessage("Вы не админ, нет у вас таких прав");
+                            continue;
                         }
+                        sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
                         continue;
                     }
                     case "/changenick": { // смена своего ника
@@ -192,6 +225,7 @@ public class ClientHandler {
                         sendMessage("Неопознанная команда");
                     }
                 }
+                break;
             } else {
                 server.broadcastMessage("Broadcast message: " + message);
             }
@@ -204,6 +238,7 @@ public class ClientHandler {
             try {
                 socket.close();
             } catch (IOException e) {
+                System.out.println("socket exception string 214 ");
                 throw new RuntimeException(e);
             }
 
@@ -212,6 +247,7 @@ public class ClientHandler {
             try {
                 in.close();
             } catch (IOException e) {
+                System.out.println("in exception string 223 ");
                 throw new RuntimeException(e);
             }
         }
@@ -219,6 +255,7 @@ public class ClientHandler {
             try {
                 out.close();
             } catch (IOException e) {
+                System.out.println("out exception string 231 ");
                 throw new RuntimeException(e);
             }
         }
@@ -231,6 +268,7 @@ public class ClientHandler {
             SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
             out.writeUTF(timeFormatter.format(currentDate) + " " + message);
         } catch (IOException e) {
+            System.out.println("sendMessage exception string 244 ");
             e.printStackTrace();
             disconnect();
         }
