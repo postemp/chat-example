@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 public class ClientHandler {
     private Socket socket;
@@ -72,15 +73,20 @@ public class ClientHandler {
                 case "/auth": {
                     String login = args[1];
                     String password = args[2];
-                    String username = server.getAuthenticationProvider().getUsernameByLoginAndPassword(login, password);
-                    if (username == null || username.isBlank()) {
+                    User user = server.getAuthenticationProvider().getUsernameByLoginAndPassword(login, password);
+                    if (Objects.isNull(user)) {
                         sendMessage("Указан неверный логин/пароль");
-                    } else {
-                        this.username = username;
-                        sendMessage(username + ", добро пожаловать в чат!");
-                        server.subscribe(this);
-                        isAuthenticated = true;
+                        break;
                     }
+                    Date currentDate = new Date();
+                    if (currentDate.before(user.getBannedTill())) {
+                        sendMessage("Вы заблокированы до :" +user.getBannedTill());
+                        break;
+                    }
+                    this.username = user.getUsername();
+                    sendMessage(user.getUsername() + ", добро пожаловать в чат!");
+                    server.subscribe(this);
+                    isAuthenticated = true;
                     break;
                 }
                 case "/register": {
@@ -153,7 +159,7 @@ public class ClientHandler {
                     }
                     case "/whoami": {
                         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-                        sendMessage("Вы " + username + " ваша роль:" + myRole + " дата блокировки до:" );
+                        sendMessage("Вы " + username + " ваша роль:" + myRole + " дата блокировки до:");
                         continue;
                     }
                     case "/kick": {
@@ -195,7 +201,7 @@ public class ClientHandler {
                             sendMessage("Не указан период блокировки, 0 - до скончания веков");
                             continue;
                         }
-                        sendMessage("Пользователь "+ bannedUser + " заблокирован в БД, результат: "+  server.getAuthenticationProvider().banUser(bannedUser,bannedPeriod));
+                        sendMessage("Пользователь " + bannedUser + " заблокирован в БД, результат: " + server.getAuthenticationProvider().banUser(bannedUser, bannedPeriod));
                         if (server.kickUser(bannedUser, this.username)) {
                             sendMessage("Отключили пользователя:" + bannedUser);
                         } else {

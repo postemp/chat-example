@@ -8,7 +8,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     private static final String DATABASE_URL = "jdbc:postgresql://localhost:5432/postgres";
     private static final String dbUser = "postgres";
     private static final String dbPassword = "postgres";
-    private static final String SELECT_ALL_USERS_WITH_ROLE = "select u.id as id, u.login as login, u.username as username, r.roles_name, u.password  from users u, roles r, user_to_roles ur " +
+    private static final String SELECT_ALL_USERS_WITH_ROLE = "select u.id as id, u.login as login, u.username as username, r.roles_name, u.password, u.banned_till from users u, roles r, user_to_roles ur " +
             "where ur.user_id = u.id and ur.role_id = r.id";
 
     private final List<User> users;
@@ -24,7 +24,8 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
                         String userName = rs.getString("username");
                         String role = rs.getString("roles_name");
                         String password = rs.getString("password");
-                        users.add(new User(login, password, role, userName));
+                        Timestamp bannedTill = rs.getTimestamp("banned_till");
+                        users.add(new User(login, password, role, userName, bannedTill));
                     }
                 } catch (SQLException e) {
                 }
@@ -35,10 +36,12 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public String getUsernameByLoginAndPassword(String login, String password) {
+    public User getUsernameByLoginAndPassword(String login, String password) {
+//        public String getUsernameByLoginAndPassword(String login, String password) {
         for (User user : users) {
             if (Objects.equals(user.getPassword(), password) && Objects.equals(user.getLogin(), login)) {
-                return user.getUsername();
+                return user;
+//                return user.getUsername();
             }
         }
         return null;
@@ -165,39 +168,43 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
             if (Objects.equals(user.getUsername(), bannedUser)) {
                 System.out.println("Мы нашли ник пользователя " + bannedUser + " с логином: " + user.getLogin() + " в памяти, устанавливаем время блокировки");
                 user.setBannedTill(blockedUntilDate);
+
+                try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
+                    connection.setAutoCommit(false);
+                    Statement statement = connection.createStatement();
+                    PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
+                    ps.setString(1, bannedUser);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            Long userId = rs.getLong("id");
+                            String login = rs.getString("login");
+                            if (login.equals(user.getLogin())) {
+                                System.out.println("Юзер найден в БД, устанавливаем блокировку");
+                                ps.close();
+                                ps = connection.prepareStatement("update public.users set banned_till = ? where id = ?;");
+                                long time = blockedUntilDate.getTime();
+                                ps.setTimestamp(1, new Timestamp(time));
+                                ps.setLong(2, userId);
+                                ps.executeUpdate();
+                                connection.commit();
+                                result = true;
+                                break;
+                            }
+                        }
+                    } catch (SQLException e) {
+                    }
+                } catch (SQLException e) {
+                    System.out.println("Connection to database failed");
+                    System.out.println(e);
+                }
             }
         }
-//                user.setUsername();
-//                try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
-//                    connection.setAutoCommit(false);
-//                    Statement statement = connection.createStatement();
-//                    PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
-//                    ps.setString(1,oldNick);
-//                    try (ResultSet rs = ps.executeQuery()) {
-//                        while (rs.next()) {
-//                            Long userId = rs.getLong("id");
-//                            String login = rs.getString("login");
-//                            if (login.equals(user.getLogin())){
-//                                System.out.println("Юзер найден в БД, меняем его ник");
-//                                ps.close();
-//                                ps = connection.prepareStatement("update public.users  set username = ? where id = ?;");
-//                                ps.setString(1,newNick);
-//                                ps.setLong(2,userId);
-//                                ps.executeUpdate();
-//                                connection.commit();
-//                                result = true;
-//                                break;
-//                            }
-//                        }
-//                    } catch (SQLException e) {
-//                    }
-//                } catch (SQLException e) {
-//                    System.out.println("Connection to database failed");
-//                    System.out.println(e);
-//                }
-//                return result;
-//            }
-//        }
-        return false;
+
+
+        return result;
     }
 }
+
+//        return result;
+//    }
+//}
