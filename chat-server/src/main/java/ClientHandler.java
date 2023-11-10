@@ -27,6 +27,18 @@ public class ClientHandler {
         this.loginDate = loginDate;
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public DataInputStream getIn() {
+        return in;
+    }
+
+    public DataOutputStream getOut() {
+        return out;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -249,8 +261,8 @@ public class ClientHandler {
                         }
                         sendMessage("Отключаем сервер");
                         server.serverShutdown();
-                        new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
-                        this.disconnect();
+//                        new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
+//                        this.disconnect();
                         continue;
                     }
                     case "/changenick": { // смена своего ника

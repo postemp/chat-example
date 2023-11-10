@@ -1,3 +1,5 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,6 +12,8 @@ public class Server {
 
     private final AuthenticationProvider authenticationProvider;
 
+    private ServerSocket serverSocket;
+
     public AuthenticationProvider getAuthenticationProvider() {
         return authenticationProvider;
     }
@@ -18,6 +22,59 @@ public class Server {
 
     public void serverShutdown() {
         this.toExit = true;
+
+        new Thread(() -> {
+            try {
+                Iterator<ClientHandler> clientHandlerIterator = clients.iterator();
+                while (clientHandlerIterator.hasNext()) {
+                    ClientHandler clientHandler = clientHandlerIterator.next();
+                    clientHandler.sendMessage("Сервер отключается, все на выход!");
+                    System.out.println("Отключаем пользователя " + clientHandler.getUsername());
+                    Socket socket = clientHandler.getSocket();
+                    DataInputStream in = clientHandler.getIn();
+                    DataOutputStream out = clientHandler.getOut();
+                    if (in != null) {
+                        try {
+                            in.close();
+                        } catch (IOException e) {
+                            System.out.println("in exception ");
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    if (out != null) {
+                        try {
+                            out.close();
+                        } catch (IOException e) {
+                            System.out.println("out exception ");
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    if (socket != null) {
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            System.out.println("socket exception ");
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                    clientHandlerIterator.remove();
+                }
+            } catch (Exception e) {
+                System.out.println("Exception:" + e);
+                throw new RuntimeException(e);
+            }
+        }).start();
+
+
+        // отключаем сервер
+        try {
+            new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
+        } catch (IOException e) {
+            System.out.println("exception during closing serverSocket");
+            throw new RuntimeException(e);
+        }
     }
 
     public Server(int port, AuthenticationProvider authenticationProvider) {
@@ -27,54 +84,69 @@ public class Server {
     }
 
     public void start() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-//            new Thread(() -> {
-//                try {
-////                    ClientHandler clientHandler; // для варианта с итератором
-//                    while (!toExit) {
-//                        // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
-//                        Date currentDate = new Date();
-//                        System.out.println("begin----------------------------"+currentDate);
-//                        long diffInMillies = 0;
-//                        for (ClientHandler clientHandler : clients) {
-//                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
-////                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
-//                            if (diffInMillies >= 20) {  // по хорошему время нужно брать из переменной из файла настроек, но не успел....
-////                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 20) {
-//                                System.out.println("Отключаем пользователя "+ clientHandler.getUsername());
-//                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
-//                                clientHandler.disconnect();
-////                                clients.remove(clientHandler);
-//                                break;
-//                            }
-//                        }
-////                    вариант с итератором, по моему, избыточен
-////                    ListIterator<ClientHandler> clientHandlerIterator = clients.listIterator();
-////                        while (clientHandlerIterator.hasNext()) {
-////                            System.out.println("clientHandlerIterator.hasNext 46 string ");
-////                            clientHandler =clientHandlerIterator.next();
-////                            System.out.println("clientHandlerIterator.hasNext 48 string ");
-////                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 5000; // don't forget to change  to 60000
-////                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
-//////                            if (diffInMillies >= 20) {
-////                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 1) {
-////                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
-////                                clientHandler.disconnect();
-////                                clientHandlerIterator.remove();
-//////                                clients.remove(clientHandler);
-//////                                break;
-////                            }
-////                        }
+        try {
+            serverSocket = new ServerSocket(port);
+            new Thread(() -> {
+                try {
+                    while (!toExit) {
+                        // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
+                        Date currentDate = new Date();
+                        System.out.println("begin----------------------------" + currentDate);
+                        long diffInMillies = 0;
+                        Iterator<ClientHandler> clientHandlerIterator = clients.iterator();
+                        while (clientHandlerIterator.hasNext()) {
+                            System.out.println("clientHandlerIterator.hasNext 46 string ");
+                            ClientHandler clientHandler = clientHandlerIterator.next();
+                            System.out.println("clientHandlerIterator.hasNext 48 string ");
+                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
+                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
+                            if (diffInMillies >= 20) {
+//                            if (clientHandler.getUsername().equals("Pasha") && diffInMillies >= 1) {
+                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
+                                System.out.println("Отключаем пользователя " + clientHandler.getUsername());
+                                Socket socket = clientHandler.getSocket();
+                                DataInputStream in = clientHandler.getIn();
+                                DataOutputStream out = clientHandler.getOut();
+
+                                if (in != null) {
+                                    try {
+                                        in.close();
+                                    } catch (IOException e) {
+                                        System.out.println("in exception ");
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                                if (out != null) {
+                                    try {
+                                        out.close();
+                                    } catch (IOException e) {
+                                        System.out.println("out exception ");
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+
+                                if (socket != null) {
+                                    try {
+                                        socket.close();
+                                    } catch (IOException e) {
+                                        System.out.println("socket exception ");
+                                        throw new RuntimeException(e);
+                                    }
+
+                                }
+                                clientHandlerIterator.remove();
+                            }
+                        }
 //                        System.out.println("end----------------------------");
-//                        Thread.sleep(60000); // 60000
-//                    }
-//                } catch (Exception e)  {
-//                    System.out.println("Exception:" + e);
-//                    throw new RuntimeException(e);
-//
-//                } finally {
-//                }
-//            }).start();
+                        Thread.sleep(60000); // 60000
+                    }
+                } catch (Exception e) {
+                    System.out.println("Exception:" + e);
+                    throw new RuntimeException(e);
+
+                } finally {
+                }
+            }).start();
             while (!toExit) {
                 System.out.println("waiting for request from client on port: " + port);
                 Socket socket = serverSocket.accept();
@@ -90,6 +162,12 @@ public class Server {
                 IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
+        } finally {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }
