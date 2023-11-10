@@ -14,6 +14,12 @@ public class Server {
         return authenticationProvider;
     }
 
+    private boolean toExit = false;
+
+    public void serverShutdown() {
+        this.toExit = true;
+    }
+
     public Server(int port, AuthenticationProvider authenticationProvider) {
         this.port = port;
         clients = new ArrayList<>();
@@ -22,62 +28,70 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            new Thread(() -> {
-                try {
-//                    ClientHandler clientHandler; // для варианта с итератором
-                    while (true) {
-                        // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
-                        Date currentDate = new Date();
+//            new Thread(() -> {
+//                try {
+////                    ClientHandler clientHandler; // для варианта с итератором
+//                    while (!toExit) {
+//                        // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
+//                        Date currentDate = new Date();
 //                        System.out.println("begin----------------------------"+currentDate);
-                        long diffInMillies = 0;
-                        for (ClientHandler clientHandler : clients) {
-                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
-//                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
-                            if (diffInMillies >= 20) {
-//                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 20) {
-                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
-                                clientHandler.disconnect();
-                                clients.remove(clientHandler);
-                                break;
-                            }
-                        }
-//                    вариант с итератором, по моему, избыточен
-//                    ListIterator<ClientHandler> clientHandlerIterator = clients.listIterator();
-//                        while (clientHandlerIterator.hasNext()) {
-//                            System.out.println("clientHandlerIterator.hasNext 46 string ");
-//                            clientHandler =clientHandlerIterator.next();
-//                            System.out.println("clientHandlerIterator.hasNext 48 string ");
-//                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 5000; // don't forget to change  to 60000
-//                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
-////                            if (diffInMillies >= 20) {
-//                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 1) {
+//                        long diffInMillies = 0;
+//                        for (ClientHandler clientHandler : clients) {
+//                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
+////                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
+//                            if (diffInMillies >= 20) {  // по хорошему время нужно брать из переменной из файла настроек, но не успел....
+////                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 20) {
+//                                System.out.println("Отключаем пользователя "+ clientHandler.getUsername());
 //                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
 //                                clientHandler.disconnect();
-//                                clientHandlerIterator.remove();
 ////                                clients.remove(clientHandler);
-////                                break;
+//                                break;
 //                            }
 //                        }
+////                    вариант с итератором, по моему, избыточен
+////                    ListIterator<ClientHandler> clientHandlerIterator = clients.listIterator();
+////                        while (clientHandlerIterator.hasNext()) {
+////                            System.out.println("clientHandlerIterator.hasNext 46 string ");
+////                            clientHandler =clientHandlerIterator.next();
+////                            System.out.println("clientHandlerIterator.hasNext 48 string ");
+////                            diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 5000; // don't forget to change  to 60000
+////                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
+//////                            if (diffInMillies >= 20) {
+////                            if (clientHandler.getUsername().equals("Sasha") && diffInMillies >= 1) {
+////                                clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
+////                                clientHandler.disconnect();
+////                                clientHandlerIterator.remove();
+//////                                clients.remove(clientHandler);
+//////                                break;
+////                            }
+////                        }
 //                        System.out.println("end----------------------------");
-                        Thread.sleep(60000); // 60000
-                    }
-                } catch (Exception e)  {
-                    System.out.println("Exception:" + e);
-                    throw new RuntimeException(e);
-
-                } finally {
-                }
-            }).start();
-            while (true) {
-                System.out.println("a new socket was made on port: " + port);
+//                        Thread.sleep(60000); // 60000
+//                    }
+//                } catch (Exception e)  {
+//                    System.out.println("Exception:" + e);
+//                    throw new RuntimeException(e);
+//
+//                } finally {
+//                }
+//            }).start();
+            while (!toExit) {
+                System.out.println("waiting for request from client on port: " + port);
                 Socket socket = serverSocket.accept();
-                new ClientHandler(socket, this);
+                System.out.println("a new serverSocket.accept()");
+                if (toExit) {
+                    socket.close();
+                    System.out.println("Отключаем сервер по команде пользователя");
+                    return;
+                }
+                new ClientHandler(socket, this, serverSocket);
             }
         } catch (
                 IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {

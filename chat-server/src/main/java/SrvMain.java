@@ -6,5 +6,6 @@ public class SrvMain {
         }
         Server server = new Server(port, new InMemoryAuthenticationProvider());
         server.start();
+        System.out.println("Сервер отключается, выход");
     }
 }

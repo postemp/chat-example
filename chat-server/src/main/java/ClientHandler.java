@@ -1,6 +1,7 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,6 +16,8 @@ public class ClientHandler {
     private Server server;
     private static int userCount = 0;
     Date loginDate;
+
+    private ServerSocket serverSocket;
 
     public Date getLoginDate() {
         return loginDate;
@@ -36,9 +39,10 @@ public class ClientHandler {
         return true;
     }
 
-    public ClientHandler(Socket socket, Server server) throws IOException {
+    public ClientHandler(Socket socket, Server server, ServerSocket serverSocket) throws IOException {
         this.socket = socket;
         this.server = server;
+        this.serverSocket = serverSocket;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         loginDate = new Date();
@@ -127,8 +131,9 @@ public class ClientHandler {
             try {
                 message = in.readUTF();
             } catch (Exception e) {
-                System.out.println("Скорее всего пользователя отключили, поэтому exception");
-                e.printStackTrace();
+                System.out.println("Пользователя отключили, поэтому exception");
+                break;
+                //e.printStackTrace();
             }
             if (message.startsWith("/")) {
                 String[] args = message.split(" ");
@@ -182,7 +187,7 @@ public class ClientHandler {
                         continue;
                     }
                     case "/ban": {
-                        // /ban username если нет второго аргумента, то навечно, либо цифра - время блокировки в минутах
+                        // /ban username цифра - время блокировки в минутах, 0 - навечно
                         if (!AmIAdmin()) {
                             sendMessage("Вы не админ, нет у вас таких прав");
                             continue;
@@ -198,7 +203,7 @@ public class ClientHandler {
                         try {
                             bannedPeriod = Integer.parseInt(args[2]);
                         } catch (Exception e) {
-                            sendMessage("Не указан период блокировки, 0 - до скончания веков");
+                            sendMessage("Ошибка ввода периода блокировки, введите количество минут, 0 - до скончания веков, отрицательное число разблокирует пользователя");
                             continue;
                         }
                         sendMessage("Пользователь " + bannedUser + " заблокирован в БД, результат: " + server.getAuthenticationProvider().banUser(bannedUser, bannedPeriod));
@@ -214,6 +219,14 @@ public class ClientHandler {
                             sendMessage("Вы не админ, нет у вас таких прав");
                             continue;
                         }
+                        String unBannedUser;
+                        try {
+                            unBannedUser = args[1];
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            sendMessage("Не указан пользователь для разблокировки");
+                            continue;
+                        }
+                        sendMessage("Пользователь " + unBannedUser + " разблокирован в БД, результат: " + server.getAuthenticationProvider().banUser(unBannedUser, -1000000000));
                         continue;
                     }
                     case "/role": {
@@ -227,6 +240,17 @@ public class ClientHandler {
                             continue;
                         }
                         sendMessage("Список всех клиентов из БД: " + server.getAuthenticationProvider().getAllClientsList());
+                        continue;
+                    }
+                    case "/shutdown": {
+                        if (!AmIAdmin()) {
+                            sendMessage("Вы не админ, нет у вас таких прав");
+                            continue;
+                        }
+                        sendMessage("Отключаем сервер");
+                        server.serverShutdown();
+                        new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
+                        this.disconnect();
                         continue;
                     }
                     case "/changenick": { // смена своего ника
@@ -264,7 +288,7 @@ public class ClientHandler {
             try {
                 socket.close();
             } catch (IOException e) {
-                System.out.println("socket exception string 214 ");
+                System.out.println("socket exception ");
                 throw new RuntimeException(e);
             }
 
@@ -273,7 +297,7 @@ public class ClientHandler {
             try {
                 in.close();
             } catch (IOException e) {
-                System.out.println("in exception string 223 ");
+                System.out.println("in exception ");
                 throw new RuntimeException(e);
             }
         }
@@ -281,7 +305,7 @@ public class ClientHandler {
             try {
                 out.close();
             } catch (IOException e) {
-                System.out.println("out exception string 231 ");
+                System.out.println("out exception ");
                 throw new RuntimeException(e);
             }
         }

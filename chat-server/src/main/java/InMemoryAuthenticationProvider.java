@@ -156,8 +156,9 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
         long curTimeInMs = currentDate.getTime();
         Date blockedUntilDate;
         if (bannedPeriod == 0) {
-            blockedUntilDate = new Date(1212121212121121212L);
-
+            blockedUntilDate = new Date(121212212121212L); // устанавливаем очень большую дату
+        } else if (bannedPeriod < 0) {
+            blockedUntilDate = new Date(1L); // устанавливаем очень маленькую дату
         } else {
             blockedUntilDate = new Date(curTimeInMs + (bannedPeriod * 60000));
         }
@@ -199,8 +200,6 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
                 }
             }
         }
-
-
         return result;
     }
 }
