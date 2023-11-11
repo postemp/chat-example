@@ -203,7 +203,3 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
         return result;
     }
 }
-
-//        return result;
-//    }
-//}

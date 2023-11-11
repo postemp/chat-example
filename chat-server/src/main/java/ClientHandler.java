@@ -108,12 +108,6 @@ public class ClientHandler {
                 case "/register": {
                     String login = args[1];
                     String username = args[2];
-//                    String role = args[3];
-//                    if (!(role.equals("ADMIN") || role.equals("USER"))) {
-//                        System.out.println("Роль может быть ADMIN или USER");
-//                        sendMessage("Роль может быть ADMIN или USER");
-//                        continue;
-//                    }
                     String password = args[3];
                     boolean isRegistred = server.getAuthenticationProvider().register(login, password, username);
                     if (!isRegistred) {
@@ -137,15 +131,12 @@ public class ClientHandler {
 
     private void communicateWithUser(Server server) throws IOException {
         while (true) {
-            // /exit -> disconnect()
-            // /w user message -> user
             String message = null;
             try {
                 message = in.readUTF();
             } catch (Exception e) {
                 System.out.println("Пользователя отключили, поэтому exception");
                 break;
-                //e.printStackTrace();
             }
             if (message.startsWith("/")) {
                 String[] args = message.split(" ");
@@ -160,9 +151,7 @@ public class ClientHandler {
                     case ("/activelist"): {
                         System.out.println("list");
                         List<String> userList = server.getUserList();
-                        String joinedUsers =
-                                String.join(", ", userList);
-//                            userList.stream().collect(Collectors.joining(","));
+                        String joinedUsers = String.join(", ", userList);
                         sendMessage(joinedUsers);
                         continue;
                     }
@@ -261,8 +250,6 @@ public class ClientHandler {
                         }
                         sendMessage("Отключаем сервер");
                         server.serverShutdown();
-//                        new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
-//                        this.disconnect();
                         continue;
                     }
                     case "/changenick": { // смена своего ника
