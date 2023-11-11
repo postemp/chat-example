@@ -91,13 +91,11 @@ public class Server {
                     while (!toExit) {
                         // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
                         Date currentDate = new Date();
-                        System.out.println("begin----------------------------" + currentDate);
+//                        System.out.println("begin----------------------------" + currentDate);
                         long diffInMillies = 0;
                         Iterator<ClientHandler> clientHandlerIterator = clients.iterator();
                         while (clientHandlerIterator.hasNext()) {
-                            System.out.println("clientHandlerIterator.hasNext 46 string ");
                             ClientHandler clientHandler = clientHandlerIterator.next();
-                            System.out.println("clientHandlerIterator.hasNext 48 string ");
                             diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
                             System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
                             if (diffInMillies >= 20) {
@@ -107,7 +105,6 @@ public class Server {
                                 Socket socket = clientHandler.getSocket();
                                 DataInputStream in = clientHandler.getIn();
                                 DataOutputStream out = clientHandler.getOut();
-
                                 if (in != null) {
                                     try {
                                         in.close();
