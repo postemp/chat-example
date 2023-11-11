@@ -167,7 +167,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
 
         for (User user : users) {
             if (Objects.equals(user.getUsername(), bannedUser)) {
-                System.out.println("Мы нашли ник пользователя " + bannedUser + " с логином: " + user.getLogin() + " в памяти, устанавливаем время блокировки");
+                System.out.println("Найден ник пользователя " + bannedUser + " с логином: " + user.getLogin() + " в памяти, устанавливаем время блокировки");
                 user.setBannedTill(blockedUntilDate);
 
                 try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {

@@ -66,8 +66,6 @@ public class Server {
                 throw new RuntimeException(e);
             }
         }).start();
-
-
         // отключаем сервер
         try {
             new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort()).close();
@@ -97,9 +95,9 @@ public class Server {
                         while (clientHandlerIterator.hasNext()) {
                             ClientHandler clientHandler = clientHandlerIterator.next();
                             diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
-                            System.out.println("Username()=" + clientHandler.getUsername() + " has been logged for " + Long.toString(diffInMillies) + " min");
                             if (diffInMillies >= 20) {
 //                            if (clientHandler.getUsername().equals("Pasha") && diffInMillies >= 1) {
+                                System.out.println("Пользовалель " + clientHandler.getUsername() + " находился в чате в течение " + Long.toString(diffInMillies) + " min");
                                 clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
                                 System.out.println("Отключаем пользователя " + clientHandler.getUsername());
                                 Socket socket = clientHandler.getSocket();
@@ -134,18 +132,16 @@ public class Server {
                                 clientHandlerIterator.remove();
                             }
                         }
-//                        System.out.println("end----------------------------");
                         Thread.sleep(60000); // 60000
                     }
                 } catch (Exception e) {
                     System.out.println("Exception:" + e);
                     throw new RuntimeException(e);
 
-                } finally {
                 }
             }).start();
             while (!toExit) {
-                System.out.println("waiting for request from client on port: " + port);
+                System.out.println("Ожидаем подключения от нового пользователя на порту: " + port);
                 Socket socket = serverSocket.accept();
                 System.out.println("a new serverSocket.accept()");
                 if (toExit) {
@@ -171,7 +167,7 @@ public class Server {
 
     public synchronized void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
-        broadcastMessage("Client " + clientHandler.getUsername() + " has connected to chat");
+        broadcastMessage("Пользователь " + clientHandler.getUsername() + " подключился к чату");
 
     }
 
@@ -193,7 +189,7 @@ public class Server {
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
-        broadcastMessage("Client " + clientHandler.getUsername() + " has disconnected");
+        broadcastMessage("Пользователь " + clientHandler.getUsername() + " отключился");
     }
 
     public synchronized List<String> getUserList() {
@@ -213,9 +209,8 @@ public class Server {
     public synchronized boolean kickUser(String user, String whoDoes) {
         System.out.println("Отключает пользователь: " + whoDoes);
         for (ClientHandler client : clients) {
-            System.out.println("User:" + client.getUsername());
             if (client.getUsername().equals(user)) {
-                System.out.println("kick user: " + client.getUsername());
+                System.out.println("Отключаем пользователя: " + client.getUsername());
                 client.sendMessage("Вас отключают");
                 client.disconnect();
                 return true;

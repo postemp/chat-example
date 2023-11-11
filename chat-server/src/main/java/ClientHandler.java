@@ -176,7 +176,7 @@ public class ClientHandler {
                     }
                     case "/whoami": {
                         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-                        sendMessage("Вы " + username + " ваша роль:" + myRole + " дата блокировки до:");
+                        sendMessage("Вы " + username + " ваша роль:" + myRole);
                         continue;
                     }
                     case "/kick": {
