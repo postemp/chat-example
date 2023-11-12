@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Objects;
 
 public class ClientHandler {
-    private Socket socket;
-    private DataInputStream in;
-    private DataOutputStream out;
+    final private Socket socket;
+    final private DataInputStream in;
+    final private DataOutputStream out;
     private String username;
-    private Server server;
-    private static int userCount = 0;
+    final private Server server;
+
     Date loginDate;
 
     private ServerSocket serverSocket;
@@ -158,7 +158,7 @@ public class ClientHandler {
                     case "/w": {
                         System.out.println("w");
                         String user = message.replaceAll("^/w\\s+(\\w+)\\s+.+", "$1");
-                        message = message.replaceAll("^/w\\s+(\\w+)\\s+(.+)", "$2");
+                        message = user + ": " + message.replaceAll("^/w\\s+(\\w+)\\s+(.+)", "$2");
                         System.out.println("user = " + user + " message = " + message);
                         server.sendMessageToUser(user, message);
                         continue;
@@ -276,7 +276,7 @@ public class ClientHandler {
                 }
                 break;
             } else {
-                server.broadcastMessage("Broadcast message: " + message);
+                server.broadcastMessage("Broadcast message from "+ this.username +": " + message);
             }
         }
     }
