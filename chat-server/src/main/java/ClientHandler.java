@@ -227,7 +227,7 @@ public class ClientHandler {
                             sendMessage("Не указан пользователь для разблокировки");
                             continue;
                         }
-                        sendMessage("Пользователь " + unBannedUser + " разблокирован в БД, результат: " + server.getAuthenticationProvider().banUser(unBannedUser, -1000000000));
+                        sendMessage("Пользователь " + unBannedUser + " разблокирован в БД, результат: " + server.getAuthenticationProvider().banUser(unBannedUser, -100));
                         continue;
                     }
                     case "/role": {
