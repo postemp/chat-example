@@ -95,15 +95,13 @@ public class Server {
                         while (!toExit) {
                             // высчитываем разницу между временем логирования и текущим в минутах и отключаем клиента, если больше 20 мин.
                             Date currentDate = new Date();
-//                        System.out.println("begin----------------------------" + currentDate);
-                            long diffInMillies = 0;
+                            long diffInMillies;
                             Iterator<ClientHandler> clientHandlerIterator = clients.iterator();
                             while (clientHandlerIterator.hasNext()) {
                                 ClientHandler clientHandler = clientHandlerIterator.next();
-                                diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000; // don't forget to change  to 60000
+                                diffInMillies = Math.abs(currentDate.getTime() - clientHandler.getLoginDate().getTime()) / 60000;
                                 if (diffInMillies >= 20) {
-//                            if (clientHandler.getUsername().equals("Pasha") && diffInMillies >= 1) {
-                                    System.out.println("Пользовалель " + clientHandler.getUsername() + " находился в чате в течение " + Long.toString(diffInMillies) + " min");
+                                    System.out.println("Пользовалель " + clientHandler.getUsername() + " находился в чате в течение " + diffInMillies + " min");
                                     clientHandler.sendMessage("Ну нельзя так долго сидеть в чате, идите работать! :)");
                                     System.out.println("Отключаем пользователя " + clientHandler.getUsername());
                                     Socket socket = clientHandler.getSocket();
@@ -125,7 +123,6 @@ public class Server {
                                             throw new RuntimeException(e);
                                         }
                                     }
-
                                     if (socket != null) {
                                         try {
                                             socket.close();
@@ -138,7 +135,7 @@ public class Server {
                                     clientHandlerIterator.remove();
                                 }
                             }
-                            mon.wait(60000); // 60000
+                            mon.wait(60000);
                         }
                     }
                 } catch (Exception e) {
