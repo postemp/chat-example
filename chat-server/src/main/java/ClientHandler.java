@@ -45,10 +45,7 @@ public class ClientHandler {
 
     public Boolean AmIAdmin() {
         String myRole = server.getAuthenticationProvider().getRoleByUsername(this.username);
-        if (!myRole.equals("ADMIN")) {
-            return false;
-        }
-        return true;
+        return myRole.equals("ADMIN");
     }
 
     public ClientHandler(Socket socket, Server server, ServerSocket serverSocket) throws IOException {
@@ -68,7 +65,6 @@ public class ClientHandler {
             } catch (IOException e) {
                 System.out.println("IOException string 50 ");
                 e.printStackTrace();
-//                throw new RuntimeException(e);
             } finally {
                 System.out.println("ClientHandler Thread disconnect");
 //                disconnect();
@@ -158,7 +154,7 @@ public class ClientHandler {
                     case "/w": {
                         System.out.println("w");
                         String user = message.replaceAll("^/w\\s+(\\w+)\\s+.+", "$1");
-                        message = user + ": " + message.replaceAll("^/w\\s+(\\w+)\\s+(.+)", "$2");
+                        message = this.username + ": " + message.replaceAll("^/w\\s+(\\w+)\\s+(.+)", "$2");
                         System.out.println("user = " + user + " message = " + message);
                         server.sendMessageToUser(user, message);
                         continue;
