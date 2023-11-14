@@ -30,7 +30,7 @@ public class Server {
                     Iterator<ClientHandler> clientHandlerIterator = clients.iterator();
                     while (clientHandlerIterator.hasNext()) {
                         ClientHandler clientHandler = clientHandlerIterator.next();
-                        clientHandler.sendMessage("Сервер отключается, все на выход!");
+                        clientHandler.sendMessage("Сервер отключ ается, все на выход!");
                         System.out.println("Отключаем пользователя " + clientHandler.getUsername());
                         Socket socket = clientHandler.getSocket();
                         DataInputStream in = clientHandler.getIn();
