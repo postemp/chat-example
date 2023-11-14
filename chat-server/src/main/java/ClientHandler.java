@@ -1,7 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -17,14 +16,8 @@ public class ClientHandler {
 
     Date loginDate;
 
-    private ServerSocket serverSocket;
-
     public Date getLoginDate() {
         return loginDate;
-    }
-
-    public void setLoginDate(Date loginDate) {
-        this.loginDate = loginDate;
     }
 
     public Socket getSocket() {
@@ -48,14 +41,12 @@ public class ClientHandler {
         return myRole.equals("ADMIN");
     }
 
-    public ClientHandler(Socket socket, Server server, ServerSocket serverSocket) throws IOException {
+    public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
         this.server = server;
-        this.serverSocket = serverSocket;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         loginDate = new Date();
-//        server.subscribe(this);
         new Thread(() -> {
             try {
                 sendMessage("Введите логин пароль командой /auth login password");
@@ -67,7 +58,6 @@ public class ClientHandler {
                 e.printStackTrace();
             } finally {
                 System.out.println("ClientHandler Thread disconnect");
-//                disconnect();
             }
         }).start();
     }
@@ -77,14 +67,24 @@ public class ClientHandler {
         while (!isAuthenticated) {
             String message = in.readUTF();
             message = message.trim().replaceAll(" +", " "); // удаляем лишние случайные пробелы
-//            /auth login password
-//            /register login nick role password
             String[] args = message.split(" ");
             String command = args[0];
             switch (command) {
                 case "/auth": {
-                    String login = args[1];
-                    String password = args[2];
+                    String login;
+                    try {
+                        login = args[1];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage("Не указан логин");
+                        continue;
+                    }
+                    String password;
+                    try {
+                        password = args[2];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage("Не указан пароль");
+                        continue;
+                    }
                     User user = server.getAuthenticationProvider().getUsernameByLoginAndPassword(login, password);
                     if (Objects.isNull(user)) {
                         sendMessage("Указан неверный логин/пароль");
@@ -92,7 +92,7 @@ public class ClientHandler {
                     }
                     Date currentDate = new Date();
                     if (currentDate.before(user.getBannedTill())) {
-                        sendMessage("Вы заблокированы до :" +user.getBannedTill());
+                        sendMessage("Вы заблокированы до :" + user.getBannedTill());
                         break;
                     }
                     this.username = user.getUsername();
@@ -102,9 +102,27 @@ public class ClientHandler {
                     break;
                 }
                 case "/register": {
-                    String login = args[1];
-                    String username = args[2];
-                    String password = args[3];
+                    String login;
+                    try {
+                        login = args[1];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage("Не указан логин");
+                        continue;
+                    }
+                    String username ;
+                    try {
+                        username = args[2];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage("Не указано имя пользователя");
+                        continue;
+                    }
+                    String password;
+                    try {
+                        password = args[3];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        sendMessage("Не указан пароль");
+                        continue;
+                    }
                     boolean isRegistred = server.getAuthenticationProvider().register(login, password, username);
                     if (!isRegistred) {
                         sendMessage("Указанный логин/никнейм уже заняты");
@@ -127,7 +145,7 @@ public class ClientHandler {
 
     private void communicateWithUser(Server server) throws IOException {
         while (true) {
-            String message = null;
+            String message;
             try {
                 message = in.readUTF();
             } catch (Exception e) {
@@ -272,7 +290,7 @@ public class ClientHandler {
                 }
                 break;
             } else {
-                server.broadcastMessage("Broadcast message from "+ this.username +": " + message);
+                server.broadcastMessage("Broadcast message from " + this.username + ": " + message);
             }
         }
     }
@@ -308,7 +326,6 @@ public class ClientHandler {
 
     public void sendMessage(String message) {
         try {
-//            System.out.println("We try to send message:"+ message);
             Date currentDate = new Date();
             SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
             out.writeUTF(timeFormatter.format(currentDate) + " " + message);

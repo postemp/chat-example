@@ -153,7 +153,7 @@ public class Server {
                     System.out.println("Отключаем сервер по команде пользователя");
                     return;
                 }
-                new ClientHandler(socket, this, serverSocket);
+                new ClientHandler(socket, this);
             }
         } catch (IOException e) {
             e.printStackTrace();
