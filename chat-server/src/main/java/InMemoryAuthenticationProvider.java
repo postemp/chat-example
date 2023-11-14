@@ -19,7 +19,6 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
             try (PreparedStatement ps = connection.prepareStatement(SELECT_ALL_USERS_WITH_ROLE)) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-//                        long id = rs.getLong("id");
                         String login = rs.getString("login");
                         String userName = rs.getString("username");
                         String role = rs.getString("roles_name");
@@ -60,7 +59,6 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
         // добавляем запись нового юзера в БД по умолчанию с правами USER
         try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
             connection.setAutoCommit(false);
-//            Statement statement = connection.createStatement();
             int userId;
             PreparedStatement ps = connection.prepareStatement("insert into public.users ( login, username, password ) values (?,?,?);", Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, login);
