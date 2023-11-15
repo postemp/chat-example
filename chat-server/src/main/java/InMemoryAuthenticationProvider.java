@@ -117,12 +117,11 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
                 user.setUsername(newNick);
                 try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
                     connection.setAutoCommit(false);
-//                    Statement statement = connection.createStatement();
                     PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
                     ps.setString(1, oldNick);
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
-                            Long userId = rs.getLong("id");
+                            long userId = rs.getLong("id");
                             String login = rs.getString("login");
                             if (login.equals(user.getLogin())) {
                                 System.out.println("Юзер найден в БД, меняем его ник");
@@ -172,12 +171,11 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
 
                 try (Connection connection = DriverManager.getConnection(DATABASE_URL, dbUser, dbPassword)) {
                     connection.setAutoCommit(false);
-//                    Statement statement = connection.createStatement();
                     PreparedStatement ps = connection.prepareStatement("select id, login from public.users where username = ?");
                     ps.setString(1, bannedUser);
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
-                            Long userId = rs.getLong("id");
+                            long userId = rs.getLong("id");
                             String login = rs.getString("login");
                             if (login.equals(user.getLogin())) {
                                 System.out.println("Юзер найден в БД, устанавливаем блокировку");
@@ -193,6 +191,7 @@ public class InMemoryAuthenticationProvider implements AuthenticationProvider {
                             }
                         }
                     } catch (SQLException e) {
+                        System.out.println(e);
                     }
                 } catch (SQLException e) {
                     System.out.println("Connection to database failed");
