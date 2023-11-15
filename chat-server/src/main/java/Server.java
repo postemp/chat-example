@@ -165,7 +165,6 @@ public class Server {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
