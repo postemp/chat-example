@@ -28,9 +28,14 @@ public class Network implements AutoCloseable {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                callback.call("Disconnect");
+                close();
             } finally {
+                try {
                     close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         }).start();
     }
