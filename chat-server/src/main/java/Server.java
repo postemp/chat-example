@@ -196,11 +196,6 @@ public class Server {
     }
 
     public synchronized List<String> getUserList() {
-//                вот так правильнее, но непонятно, поэтому пока переписал под свой уровень что бы разобраться.
-//                return clients.stream()
-//                .map(ClientHandler::getUsername)
-//                .collect(Collectors.toList());
-
         List<String> userList = new ArrayList<>();
         for (ClientHandler clientHandler : clients) {
             System.out.println("clientHandler.getUsername()=" + clientHandler.getUsername());
